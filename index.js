@@ -106,3 +106,20 @@ async function loadHistory() {
 }
 
 window.addEventListener('load', loadHistory);
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const notifications = await getAllNotifications();
+  renderNotifications(notifications);
+});
+
+function renderNotifications(notifications) {
+  const list = document.getElementById("notification-list");
+
+  list.innerHTML = "";
+
+  notifications.reverse().forEach(n => {
+    const li = document.createElement("li");
+    li.textContent = `[${n.issueKey}] ${n.title}`;
+    list.appendChild(li);
+  });
+}
