@@ -85,3 +85,24 @@ enableButton.addEventListener("click", () => {
     alert("Erro ao ativar notificações");
   });
 });
+
+import { getNotifications } from './db.js';
+
+async function loadHistory() {
+  const history = document.getElementById('history');
+  const notifications = await getNotifications();
+
+  history.innerHTML = '';
+
+  notifications.forEach(n => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <strong>${n.title}</strong><br/>
+      ${n.body}<br/>
+      <small>${new Date(n.timestamp).toLocaleString()}</small>
+    `;
+    history.appendChild(li);
+  });
+}
+
+window.addEventListener('load', loadHistory);

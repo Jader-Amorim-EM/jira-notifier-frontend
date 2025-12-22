@@ -1,3 +1,29 @@
+function saveToIndexedDB(notification) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('jira-notifier-db', 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('notifications')) {
+        db.createObjectStore('notifications', {
+          keyPath: 'id',
+          autoIncrement: true
+        });
+      }
+    };
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction('notifications', 'readwrite');
+      tx.objectStore('notifications').add(notification);
+      tx.oncomplete = resolve;
+    };
+
+    request.onerror = reject;
+  });
+}
+
+
 const CACHE_NAME = "jira-pwa-cache-v1";
 const STATIC_ASSETS = [
   "/",
@@ -44,27 +70,26 @@ self.addEventListener("fetch", (event) => {
 /* ==============================
    PUSH NOTIFICATION
 ================================ */
-self.addEventListener("push", (event) => {
-  let data = {};
+self.addEventListener('push', event => {
+  const data = event.data.json();
 
-  if (event.data) {
-    data = event.data.json();
-  }
-
-  const title = data.title || "Nova notificação do Jira";
-  const options = {
-    body: data.body || "Uma issue foi atualizada",
-    icon: "/icons/icon-192x192.png",
-    badge: "/icons/icon-72x72.png",
-    data: {
-      url: data.url || "/"
-    }
+  const notification = {
+    title: data.title,
+    body: data.body,
+    url: data.url || '/',
+    timestamp: new Date().toISOString()
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    saveToIndexedDB(notification).then(() =>
+      self.registration.showNotification(notification.title, {
+        body: notification.body,
+        data: { url: notification.url }
+      })
+    )
   );
 });
+
 
 /* ==============================
    CLICK NA NOTIFICAÇÃO
