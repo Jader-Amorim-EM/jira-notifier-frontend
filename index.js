@@ -1,16 +1,49 @@
+import { getNotifications } from './db.js';
+
+/* ==============================
+   CONFIGURAÇÕES
+================================ */
 const BACKEND_URL = "https://jira-push-backend.onrender.com";
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js")
-      .then(() => console.log("Service Worker registrado"))
-      .catch(err => console.error("Erro no Service Worker:", err));
-  });
-}
-
 const PUBLIC_VAPID_KEY = "BONlAh-vW098CFCTrKIgQj-xltr_inPdJ_2sBpojC5LyqGo9r5YOU843LU4ApEJOwuWG0g2LzxTFUKH9tniWuvA";
 
+/* ==============================
+   ELEMENTOS DA TELA
+================================ */
 const enableButton = document.getElementById("enableNotifications");
+const historyList = document.getElementById("history");
+
+/* ==============================
+   SERVICE WORKER
+================================ */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/service-worker.js")
+    .then(() => console.log("Service Worker registrado"))
+    .catch(err => console.error("Erro ao registrar SW:", err));
+}
+
+/* ==============================
+   PERMISSÃO DE NOTIFICAÇÃO
+================================ */
+async function requestPermission() {
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error("Permissão de notificação negada");
+  }
+}
+
+/* ==============================
+   CONVERTER VAPID
+================================ */
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
 
 /* ==============================
    REGISTRAR SERVICE WORKER
@@ -35,48 +68,25 @@ async function requestNotificationPermission() {
 }
 
 /* ==============================
-   CONVERTER VAPID
-================================ */
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
-}
-
-
-/* ==============================
-   CRIAR SUBSCRIPTION
+   SUBSCRIBE PUSH
 ================================ */
 async function subscribeUser() {
-  const registration = await registerServiceWorker();
+  await requestPermission();
 
-  await requestNotificationPermission();
+  const registration = await navigator.serviceWorker.ready;
 
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
   });
 
-  console.log("Subscription criada:", subscription);
-
-  await sendSubscriptionToBackend(subscription);
-}
-
-/* ==============================
-   ENVIAR PARA BACKEND
-================================ */
-async function sendSubscriptionToBackend(subscription) {
   await fetch(`${BACKEND_URL}/push/subscribe`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(subscription)
   });
+
+  alert("Notificações ativadas com sucesso");
 }
 
 enableButton.addEventListener("click", () => {
@@ -86,40 +96,36 @@ enableButton.addEventListener("click", () => {
   });
 });
 
-import { getNotifications } from './db.js';
-
+/* ==============================
+   HISTÓRICO DE NOTIFICAÇÕES
+================================ */
 async function loadHistory() {
-  const history = document.getElementById('history');
   const notifications = await getNotifications();
 
-  history.innerHTML = '';
+  historyList.innerHTML = "";
 
-  notifications.forEach(n => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <strong>${n.title}</strong><br/>
-      ${n.body}<br/>
-      <small>${new Date(n.timestamp).toLocaleString()}</small>
-    `;
-    history.appendChild(li);
-  });
+  if (!notifications.length) {
+    historyList.innerHTML = "<li>Nenhuma notificação recebida ainda</li>";
+    return;
+  }
+
+  notifications
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .forEach(n => {
+      const li = document.createElement("li");
+
+      li.innerHTML = `
+        <strong>${n.title}</strong><br/>
+        ${n.body}<br/>
+        <small>${new Date(n.timestamp).toLocaleString()}</small>
+        <hr/>
+      `;
+
+      historyList.appendChild(li);
+    });
 }
 
-window.addEventListener('load', loadHistory);
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const notifications = await getAllNotifications();
-  renderNotifications(notifications);
-});
-
-function renderNotifications(notifications) {
-  const list = document.getElementById("notification-list");
-
-  list.innerHTML = "";
-
-  notifications.reverse().forEach(n => {
-    const li = document.createElement("li");
-    li.textContent = `[${n.issueKey}] ${n.title}`;
-    list.appendChild(li);
-  });
-}
+/* ==============================
+   CARREGAR HISTÓRICO AO ABRIR
+================================ */
+window.addEventListener("load", loadHistory);
