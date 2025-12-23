@@ -45,21 +45,37 @@ self.addEventListener("fetch", (event) => {
    PUSH EVENT
 ================================ */
 self.addEventListener("push", event => {
-  const data = event.data ? event.data.json() : {};
+  let data = {};
+
+  if (event.data) {
+    data = event.data.json();
+  }
 
   const title = data.title || "Jira";
-  const body = data.body || "";
-  const issueKey = data.issueKey || null;
-  const jiraBaseUrl = data.jiraBaseUrl || null;
+  const options = {
+    body: data.body || "",
+    data: {
+      url: data.url || null
+    }
+  };
 
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      data: {
-        issueKey,
-        jiraBaseUrl
-      }
-    })
+    self.registration.showNotification(title, options)
+  );
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+
+  const url = event.notification.data?.url;
+
+  if (!url) {
+    console.warn("Push sem dados de redirecionamento");
+    return;
+  }
+
+  event.waitUntil(
+    clients.openWindow(url)
   );
 });
 
