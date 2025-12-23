@@ -137,9 +137,46 @@ async function loadHistory() {
 
 navigator.serviceWorker.addEventListener("message", event => {
   if (event.data?.type === "NEW_NOTIFICATION") {
-    saveNotification(event.data.payload).then(loadHistory);
+    saveNotification(event.data.payload);
+    renderHistory();
   }
 });
+
+function saveNotification(notification) {
+  const history = JSON.parse(localStorage.getItem("jira-history")) || [];
+  history.unshift(notification); // ordem correta (mais recente primeiro)
+  localStorage.setItem("jira-history", JSON.stringify(history));
+}
+
+function renderHistory() {
+  const container = document.getElementById("history");
+  container.innerHTML = "";
+
+  const history = JSON.parse(localStorage.getItem("jira-history")) || [];
+
+  if (history.length === 0) {
+    container.innerHTML = "<li>Nenhuma notificação recebida ainda</li>";
+    return;
+  }
+
+  history.forEach(item => {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      <strong>${item.title}</strong><br>
+      ${item.body}<br>
+      <small>${new Date(item.timestamp).toLocaleString()}</small>
+    `;
+
+    if (item.url) {
+      li.style.cursor = "pointer";
+      li.onclick = () => window.open(item.url, "_blank");
+    }
+
+    container.appendChild(li);
+  });
+}
+
 
 /* ==============================
    CARREGAR HISTÓRICO AO ABRIR
@@ -156,4 +193,11 @@ clearButton.addEventListener("click", async () => {
 
   await clearNotifications();
   loadHistory();
+});
+
+// ===============================
+// 🚨 AQUI ENTRA O DOMContentLoaded
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+  renderHistory();
 });

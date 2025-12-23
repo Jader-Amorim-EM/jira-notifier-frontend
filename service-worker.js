@@ -55,15 +55,41 @@ self.addEventListener("push", event => {
   const options = {
     body: data.body || "",
     data: {
-      url: data.url || null
+      url: data.url || null,
+      issueKey: data.issueKey || null,
+      timestamp: Date.now()
     }
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    (async () => {
+      await self.registration.showNotification(title, options);
+
+      const clientsList = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true
+      });
+
+      for (const client of clientsList) {
+        client.postMessage({
+          type: "NEW_NOTIFICATION",
+          payload: {
+            title,
+            body: options.body,
+            url: options.data.url,
+            issueKey: options.data.issueKey,
+            timestamp: options.data.timestamp
+          }
+        });
+      }
+    })()
   );
 });
 
+
+/* ==============================
+   CLICK NA NOTIFICAÇÃO
+================================ */
 self.addEventListener("notificationclick", event => {
   event.notification.close();
 
@@ -74,41 +100,7 @@ self.addEventListener("notificationclick", event => {
     return;
   }
 
-  event.waitUntil(
-    clients.openWindow(url)
-  );
-});
-
-/* ==============================
-   CLICK NA NOTIFICAÇÃO
-================================ */
-self.addEventListener("notificationclick", event => {
-  event.notification.close();
-
-  const { issueKey, jiraBaseUrl } = event.notification.data || {};
-
-  if (!issueKey || !jiraBaseUrl) {
-    console.warn("Push sem dados de redirecionamento");
-    return;
-  }
-
-  const url = `${jiraBaseUrl}/browse/${issueKey}`;
-
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true })
-      .then(clientList => {
-        for (const client of clientList) {
-          if ("focus" in client) {
-            client.navigate(url);
-            return client.focus();
-          }
-        }
-
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(url);
-        }
-      })
-  );
+  event.waitUntil(clients.openWindow(url));
 });
 
 
