@@ -73,38 +73,19 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", event => {
   const data = event.data?.json() || {};
 
-  const payload = {
-    title: data.title || "Jira",
-    body: data.body || "",
-    issueKey: data.issueKey || null,
-    jiraBaseUrl: data.jiraBaseUrl || null,
-    timestamp: Date.now()
-  };
+  const title = data.title || "Jira";
+  const body = data.body || "";
+  const issueKey = data.issueKey;
+  const jiraBaseUrl = data.jiraBaseUrl;
 
   event.waitUntil(
-    (async () => {
-      // 🔔 Mostra a notificação do sistema
-      await self.registration.showNotification(payload.title, {
-        body: payload.body,
-        data: {
-          issueKey: payload.issueKey,
-          jiraBaseUrl: payload.jiraBaseUrl
-        }
-      });
-
-      // 📨 Envia para o frontend (tempo real)
-      const clients = await self.clients.matchAll({
-        includeUncontrolled: true,
-        type: "window"
-      });
-
-      for (const client of clients) {
-        client.postMessage({
-          type: "NEW_NOTIFICATION",
-          payload
-        });
+    self.registration.showNotification(title, {
+      body,
+      data: {
+        issueKey,
+        jiraBaseUrl
       }
-    })()
+    })
   );
 });
 
@@ -120,6 +101,7 @@ self.addEventListener("notificationclick", event => {
   const { issueKey, jiraBaseUrl } = event.notification.data || {};
 
   if (!issueKey || !jiraBaseUrl) {
+    console.warn("Push sem dados de redirecionamento");
     return;
   }
 
@@ -127,22 +109,21 @@ self.addEventListener("notificationclick", event => {
 
   event.waitUntil(
     (async () => {
-      const allClients = await self.clients.matchAll({
+      const clientsArr = await self.clients.matchAll({
         type: "window",
         includeUncontrolled: true
       });
 
-      // 🔁 Se já existir uma aba aberta, foca nela
-      for (const client of allClients) {
+      for (const client of clientsArr) {
         if (client.url.includes(jiraBaseUrl)) {
-          client.focus();
-          client.navigate(url);
+          await client.focus();
+          await client.navigate(url);
           return;
         }
       }
 
-      // 🌐 Caso contrário, abre nova aba
       await self.clients.openWindow(url);
     })()
   );
 });
+
