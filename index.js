@@ -158,5 +158,5 @@ clearButton.addEventListener("click", async () => {
 // 🚨 AQUI ENTRA O DOMContentLoaded
 // ===============================
 document.addEventListener("DOMContentLoaded", () => {
-  renderHistory();
+  loadHistory();
 });
