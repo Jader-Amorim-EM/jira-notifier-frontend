@@ -28,6 +28,8 @@ function openDB() {
 /* ==============================
    SALVAR NOTIFICAÇÃO
 ================================ */
+let sequenceCounter = 0;
+
 export async function saveNotification(notification) {
   const db = await openDB();
 
@@ -37,7 +39,8 @@ export async function saveNotification(notification) {
   store.add({
     title: notification.title,
     body: notification.body,
-    timestamp: notification.timestamp || Date.now()
+    timestamp: notification.timestamp || Date.now(),
+    sequence: ++sequenceCounter
   });
 
   return tx.complete;
@@ -58,3 +61,18 @@ export async function getNotifications() {
     request.onerror = () => reject(request.error);
   });
 }
+
+export async function clearNotifications() {
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+
+    const request = store.clear();
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+

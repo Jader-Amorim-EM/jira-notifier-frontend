@@ -1,5 +1,5 @@
-import { getNotifications } from './db.js';
-import { saveNotification } from "./db.js";
+import { getNotifications, saveNotification, clearNotifications } from "./db.js";
+
 
 /* ==============================
    CONFIGURAÇÕES
@@ -110,8 +110,7 @@ async function loadHistory() {
     return;
   }
 
-  notifications
-    .sort((a, b) => b.timestamp - a.timestamp)
+  notifications.sort((a, b) => b.id - a.id)
     .forEach(n => {
       const li = document.createElement("li");
 
@@ -137,3 +136,15 @@ navigator.serviceWorker.addEventListener("message", event => {
    CARREGAR HISTÓRICO AO ABRIR
 ================================ */
 window.addEventListener("load", loadHistory);
+
+/* ==============================
+   LIMPAR HISTÓRICO
+================================ */
+clearButton.addEventListener("click", async () => {
+  const confirmClear = confirm("Deseja limpar todas as notificações?");
+
+  if (!confirmClear) return;
+
+  await clearNotifications();
+  loadHistory();
+});
