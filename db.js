@@ -39,6 +39,8 @@ export async function saveNotification(notification) {
   store.add({
     title: notification.title,
     body: notification.body,
+    issueKey: notification.issueKey,
+    jiraBaseUrl: notification.jiraBaseUrl,
     timestamp: notification.timestamp || Date.now(),
     sequence: ++sequenceCounter
   });
