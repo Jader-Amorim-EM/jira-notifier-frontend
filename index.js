@@ -111,7 +111,7 @@ async function loadHistory() {
     return;
   }
 
-  notifications.sort((a, b) => b.id - a.id)
+  notifications.sort((a, b) => b.timestamp - a.timestamp)
     .forEach(n => {
       const li = document.createElement("li");
       
@@ -138,7 +138,6 @@ async function loadHistory() {
 navigator.serviceWorker.addEventListener("message", event => {
   if (event.data?.type === "NEW_NOTIFICATION") {
     saveNotification(event.data.payload).then(loadHistory);
-    loadHistory(); // ATUALIZA A TELA EM TEMPO REAL
   }
 });
 

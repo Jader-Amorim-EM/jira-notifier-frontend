@@ -75,19 +75,40 @@ self.addEventListener("push", event => {
 
   const title = data.title || "Jira";
   const body = data.body || "";
-  const issueKey = data.issueKey;
-  const jiraBaseUrl = data.jiraBaseUrl;
+
+  const payload = {
+    title,
+    body,
+    issueKey: data.issueKey,
+    jiraBaseUrl: data.jiraBaseUrl,
+    timestamp: Date.now()
+  };
 
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      data: {
-        issueKey,
-        jiraBaseUrl
+    (async () => {
+      await self.registration.showNotification(title, {
+        body,
+        data: {
+          issueKey: data.issueKey,
+          jiraBaseUrl: data.jiraBaseUrl
+        }
+      });
+
+      const clients = await self.clients.matchAll({
+        includeUncontrolled: true,
+        type: "window"
+      });
+
+      for (const client of clients) {
+        client.postMessage({
+          type: "NEW_NOTIFICATION",
+          payload
+        });
       }
-    })
+    })()
   );
 });
+
 
 
 
