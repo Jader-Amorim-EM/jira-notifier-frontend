@@ -2,22 +2,23 @@
   "name": "Jira Notifier",
   "short_name": "Jira Notifier",
   "description": "Receba notificações do Jira em tempo real",
-  "start_url": "/jira-notifier-frontend/",
-  "scope": "/jira-notifier-frontend/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0A66C2",
   "icons": [
     {
-      "src": "/jira-notifier-frontend/icons/icon-192x192.png",
+      "src": "./icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/jira-notifier-frontend/icons/icon-512x512.png",
+      "src": "./icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 }
+
 
