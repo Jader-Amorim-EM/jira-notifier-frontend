@@ -117,22 +117,32 @@ self.addEventListener("push", event => {
 self.addEventListener("notificationclick", event => {
   event.notification.close();
 
-  const issueKey = event.notification.data?.issueKey;
-  const jiraBaseUrl = event.notification.data?.jiraBaseUrl;
+  const { issueKey, jiraBaseUrl } = event.notification.data || {};
 
-  if (!issueKey || !jiraBaseUrl) return;
+  if (!issueKey || !jiraBaseUrl) {
+    return;
+  }
 
-  const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`;
+  const url = `${jiraBaseUrl}/browse/${issueKey}`;
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true })
-      .then(clientList => {
-        for (const client of clientList) {
-          if (client.url.includes(jiraBaseUrl) && "focus" in client) {
-            return client.focus();
-          }
+    (async () => {
+      const allClients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true
+      });
+
+      // 🔁 Se já existir uma aba aberta, foca nela
+      for (const client of allClients) {
+        if (client.url.includes(jiraBaseUrl)) {
+          client.focus();
+          client.navigate(url);
+          return;
         }
-        return self.clients.openWindow(issueUrl);
-      })
+      }
+
+      // 🌐 Caso contrário, abre nova aba
+      await self.clients.openWindow(url);
+    })()
   );
 });
