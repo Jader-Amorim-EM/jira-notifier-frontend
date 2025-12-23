@@ -1,4 +1,5 @@
 import { getNotifications } from './db.js';
+import { saveNotification } from "./db.js";
 
 /* ==============================
    CONFIGURAÇÕES
@@ -124,6 +125,12 @@ async function loadHistory() {
       historyList.appendChild(li);
     });
 }
+
+navigator.serviceWorker.addEventListener("message", event => {
+  if (event.data?.type === "NEW_NOTIFICATION") {
+    saveNotification(event.data.payload).then(loadHistory);
+  }
+});
 
 /* ==============================
    CARREGAR HISTÓRICO AO ABRIR
