@@ -12,6 +12,7 @@ const PUBLIC_VAPID_KEY = "BONlAh-vW098CFCTrKIgQj-xltr_inPdJ_2sBpojC5LyqGo9r5YOU8
 ================================ */
 const enableButton = document.getElementById("enableNotifications");
 const historyList = document.getElementById("history");
+const clearButton = document.getElementById("clearHistory");
 
 /* ==============================
    SERVICE WORKER
