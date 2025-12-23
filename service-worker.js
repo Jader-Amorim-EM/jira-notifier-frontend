@@ -62,24 +62,29 @@ self.addEventListener("push", event => {
 
   event.waitUntil(
     (async () => {
-
-      // 2️⃣ MOSTRA O PUSH
-      await self.registration.showNotification(notification.title, {
-        body: notification.body,
-        icon: "./icons/icon-192x192.png",
-        data: { url }
+      await self.registration.showNotification(title, {
+        body,
+        data: {
+          issueKey,
+          jiraBaseUrl
+        }
       });
 
-      // 3️⃣ ATUALIZA O FRONTEND EM TEMPO REAL
       const clients = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true
+        includeUncontrolled: true,
+        type: "window"
       });
 
       for (const client of clients) {
         client.postMessage({
           type: "NEW_NOTIFICATION",
-          payload: notification
+          payload: {
+            title,
+            body,
+            issueKey,
+            jiraBaseUrl,
+            timestamp: Date.now()
+          }
         });
       }
     })()
@@ -93,23 +98,29 @@ self.addEventListener("push", event => {
 self.addEventListener("notificationclick", event => {
   event.notification.close();
 
-  const url = event.notification.data?.url;
+  const { issueKey, jiraBaseUrl } = event.notification.data || {};
 
-  if (!url) return;
+  if (!issueKey || !jiraBaseUrl) {
+    console.warn("Push sem dados de redirecionamento");
+    return;
+  }
+
+  const url = `${jiraBaseUrl}/browse/${issueKey}`;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true })
-      .then(clients => {
-        for (const client of clients) {
-          if (client.url === url && "focus" in client) {
+      .then(clientList => {
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.navigate(url);
             return client.focus();
           }
         }
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(url);
-        }
+        return self.clients.openWindow(url);
       })
   );
 });
+
+
 
 
