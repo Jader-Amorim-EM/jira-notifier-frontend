@@ -70,25 +70,36 @@ self.addEventListener("fetch", (event) => {
 /* ==============================
    PUSH NOTIFICATION
 ================================ */
-self.addEventListener('push', event => {
-  const data = event.data.json();
+self.addEventListener("push", event => {
+  const data = event.data?.json() || {};
 
-  const notification = {
-    title: data.title,
-    body: data.body,
-    url: data.url || '/',
-    timestamp: new Date().toISOString()
+  const payload = {
+    title: data.title || "Jira",
+    body: data.body || "",
+    timestamp: Date.now()
   };
 
   event.waitUntil(
-    saveToIndexedDB(notification).then(() =>
-      self.registration.showNotification(notification.title, {
-        body: notification.body,
-        data: { url: notification.url }
-      })
-    )
+    (async () => {
+      await self.registration.showNotification(payload.title, {
+        body: payload.body
+      });
+
+      const clients = await self.clients.matchAll({
+        includeUncontrolled: true,
+        type: "window"
+      });
+
+      for (const client of clients) {
+        client.postMessage({
+          type: "NEW_NOTIFICATION",
+          payload
+        });
+      }
+    })()
   );
 });
+
 
 
 /* ==============================
