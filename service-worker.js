@@ -42,46 +42,26 @@ self.addEventListener("fetch", (event) => {
 });
 
 /* ==============================
-   PUSH NOTIFICATION
+   PUSH EVENT
 ================================ */
 self.addEventListener("push", event => {
-  const data = event.data?.json() || {};
+  const data = event.data ? event.data.json() : {};
 
-  const notification = {
-    title: data.title || "Jira",
-    body: data.body || "",
-    issueKey: data.issueKey,
-    jiraBaseUrl: data.jiraBaseUrl,
-    timestamp: Date.now()
-  };
+  const title = data.title || "Jira";
+  const body = data.body || "";
+  const issueKey = data.issueKey || null;
+  const jiraBaseUrl = data.jiraBaseUrl || null;
 
   event.waitUntil(
-    (async () => {
-      // 👉 Mostra a notificação corretamente
-      await self.registration.showNotification(notification.title, {
-        body: notification.body,
-        data: {
-          issueKey: notification.issueKey,
-          jiraBaseUrl: notification.jiraBaseUrl
-        }
-      });
-
-      // 👉 Envia para a página atualizar o histórico em tempo real
-      const clients = await self.clients.matchAll({
-        includeUncontrolled: true,
-        type: "window"
-      });
-
-      for (const client of clients) {
-        client.postMessage({
-          type: "NEW_NOTIFICATION",
-          payload: notification
-        });
+    self.registration.showNotification(title, {
+      body,
+      data: {
+        issueKey,
+        jiraBaseUrl
       }
-    })()
+    })
   );
 });
-
 
 /* ==============================
    CLICK NA NOTIFICAÇÃO
@@ -107,7 +87,10 @@ self.addEventListener("notificationclick", event => {
             return client.focus();
           }
         }
-        return self.clients.openWindow(url);
+
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(url);
+        }
       })
   );
 });
