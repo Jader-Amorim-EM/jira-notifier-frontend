@@ -108,7 +108,9 @@ self.addEventListener("push", event => {
   );
 });
 
-
+/* ==============================
+   CLICK NA NOTIFICAÇÃO
+================================ */
 self.addEventListener("notificationclick", event => {
   event.notification.close();
 
@@ -131,39 +133,4 @@ self.addEventListener("notificationclick", event => {
   );
 });
 
-
-/* ==============================
-   CLICK NA NOTIFICAÇÃO
-================================ */
-self.addEventListener("notificationclick", event => {
-  event.notification.close();
-
-  const { issueKey, jiraBaseUrl } = event.notification.data || {};
-
-  if (!issueKey || !jiraBaseUrl) {
-    console.warn("Push sem dados de redirecionamento");
-    return;
-  }
-
-  const url = `${jiraBaseUrl}/browse/${issueKey}`;
-
-  event.waitUntil(
-    (async () => {
-      const clientsArr = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true
-      });
-
-      for (const client of clientsArr) {
-        if (client.url.includes(jiraBaseUrl)) {
-          await client.focus();
-          await client.navigate(url);
-          return;
-        }
-      }
-
-      await self.clients.openWindow(url);
-    })()
-  );
-});
 
