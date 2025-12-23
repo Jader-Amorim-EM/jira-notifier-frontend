@@ -19,7 +19,7 @@ const clearButton = document.getElementById("clearHistory");
 ================================ */
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
-    .register("/service-worker.js")
+    .register("./service-worker.js")
     .then(() => console.log("Service Worker registrado"))
     .catch(err => console.error("Erro ao registrar SW:", err));
 }
@@ -55,7 +55,7 @@ async function registerServiceWorker() {
     throw new Error("Service Worker não suportado");
   }
 
-  return await navigator.serviceWorker.register("/service-worker.js");
+  return await navigator.serviceWorker.register("./service-worker.js");
 }
 
 /* ==============================

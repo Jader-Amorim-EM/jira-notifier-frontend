@@ -1,37 +1,11 @@
-function saveToIndexedDB(notification) {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('jira-notifier-db', 1);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains('notifications')) {
-        db.createObjectStore('notifications', {
-          keyPath: 'id',
-          autoIncrement: true
-        });
-      }
-    };
-
-    request.onsuccess = () => {
-      const db = request.result;
-      const tx = db.transaction('notifications', 'readwrite');
-      tx.objectStore('notifications').add(notification);
-      tx.oncomplete = resolve;
-    };
-
-    request.onerror = reject;
-  });
-}
-
-
 const CACHE_NAME = "jira-pwa-cache-v1";
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/index.js",
-  "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png"
+  "./",
+  "./index.html",
+  "./index.js",
+  "./manifest.json",
+  "./icons/icon-192x192.png",
+  "./icons/icon-512x512.png"
 ];
 
 /* ==============================
@@ -88,8 +62,6 @@ self.addEventListener("push", event => {
 
   event.waitUntil(
     (async () => {
-      // 1️⃣ SALVA NO INDEXEDDB
-      await saveToIndexedDB(notification);
 
       // 2️⃣ MOSTRA O PUSH
       await self.registration.showNotification(notification.title, {
