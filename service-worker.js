@@ -73,45 +73,47 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", event => {
   const data = event.data?.json() || {};
 
-  const title = data.title || "Jira";
-  const body = data.body || "";
-  const issueKey = data.issueKey;
-  const jiraBaseUrl = data.jiraBaseUrl;
+  const notification = {
+    title: data.title || "Jira",
+    body: data.body || "",
+    issueKey: data.issueKey,
+    jiraBaseUrl: data.jiraBaseUrl,
+    timestamp: Date.now()
+  };
 
-  const url = issueKey && jiraBaseUrl
-    ? `${jiraBaseUrl}/browse/${issueKey}`
-    : null;
+  const url =
+    notification.issueKey && notification.jiraBaseUrl
+      ? `${notification.jiraBaseUrl}/browse/${notification.issueKey}`
+      : null;
 
   event.waitUntil(
     (async () => {
-      
       // 1️⃣ SALVA NO INDEXEDDB
       await saveToIndexedDB(notification);
 
       // 2️⃣ MOSTRA O PUSH
-      await self.registration.showNotification(title, {
+      await self.registration.showNotification(notification.title, {
         body: notification.body,
         icon: "/icons/icon-192x192.png",
-        data: {
-           url
-        }
+        data: { url }
       });
-      
+
       // 3️⃣ ATUALIZA O FRONTEND EM TEMPO REAL
       const clients = await self.clients.matchAll({
-        includeUncontrolled: true,
-        type: "window"
+        type: "window",
+        includeUncontrolled: true
       });
 
       for (const client of clients) {
         client.postMessage({
           type: "NEW_NOTIFICATION",
-          payload
+          payload: notification
         });
       }
     })()
   );
 });
+
 
 /* ==============================
    CLICK NA NOTIFICAÇÃO
