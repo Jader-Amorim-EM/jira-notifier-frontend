@@ -55,21 +55,18 @@ self.addEventListener("push", event => {
     timestamp: Date.now()
   };
 
-  const url =
-    notification.issueKey && notification.jiraBaseUrl
-      ? `${notification.jiraBaseUrl}/browse/${notification.issueKey}`
-      : null;
-
   event.waitUntil(
     (async () => {
-      await self.registration.showNotification(title, {
-        body,
+      // 👉 Mostra a notificação corretamente
+      await self.registration.showNotification(notification.title, {
+        body: notification.body,
         data: {
-          issueKey,
-          jiraBaseUrl
+          issueKey: notification.issueKey,
+          jiraBaseUrl: notification.jiraBaseUrl
         }
       });
 
+      // 👉 Envia para a página atualizar o histórico em tempo real
       const clients = await self.clients.matchAll({
         includeUncontrolled: true,
         type: "window"
@@ -78,13 +75,7 @@ self.addEventListener("push", event => {
       for (const client of clients) {
         client.postMessage({
           type: "NEW_NOTIFICATION",
-          payload: {
-            title,
-            body,
-            issueKey,
-            jiraBaseUrl,
-            timestamp: Date.now()
-          }
+          payload: notification
         });
       }
     })()
