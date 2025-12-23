@@ -75,22 +75,21 @@ self.addEventListener("push", event => {
 
   const title = data.title || "Jira";
   const body = data.body || "";
+  const issueKey = data.issueKey;
+  const jiraBaseUrl = data.jiraBaseUrl;
 
-  const payload = {
-    title,
-    body,
-    issueKey: data.issueKey,
-    jiraBaseUrl: data.jiraBaseUrl,
-    timestamp: Date.now()
-  };
+  const url = issueKey && jiraBaseUrl
+    ? `${jiraBaseUrl}/browse/${issueKey}`
+    : null;
 
   event.waitUntil(
     (async () => {
       await self.registration.showNotification(title, {
         body,
+        icon: "/icons/icon-192x192.png",
+        badge: "/icons/icon-72x72.png",
         data: {
-          issueKey: data.issueKey,
-          jiraBaseUrl: data.jiraBaseUrl
+           url
         }
       });
 
@@ -110,7 +109,27 @@ self.addEventListener("push", event => {
 });
 
 
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
 
+  const url = event.notification.data?.url;
+
+  if (!url) return;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true })
+      .then(clients => {
+        for (const client of clients) {
+          if (client.url === url && "focus" in client) {
+            return client.focus();
+          }
+        }
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(url);
+        }
+      })
+  );
+});
 
 
 /* ==============================
