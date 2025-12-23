@@ -81,9 +81,13 @@ self.addEventListener("push", event => {
 
   event.waitUntil(
     (async () => {
-      await self.registration.showNotification(payload.title, {
-        body: payload.body
-      });
+      await self.registration.showNotification(title, {
+             body,
+             data: {
+               issueKey,
+               jiraBaseUrl
+             }
+});
 
       const clients = await self.clients.matchAll({
         includeUncontrolled: true,
@@ -105,21 +109,26 @@ self.addEventListener("push", event => {
 /* ==============================
    CLICK NA NOTIFICAÇÃO
 ================================ */
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener("notificationclick", event => {
   event.notification.close();
 
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === event.notification.data.url && "focus" in client) {
-          return client.focus();
-        }
-      }
+  const issueKey = event.notification.data?.issueKey;
+  const jiraBaseUrl = event.notification.data?.jiraBaseUrl;
 
-      if (clients.openWindow) {
-        return clients.openWindow(event.notification.data.url);
-      }
-    })
+  if (!issueKey || !jiraBaseUrl) return;
+
+  const issueUrl = `${jiraBaseUrl}/browse/${issueKey}`;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true })
+      .then(clientList => {
+        for (const client of clientList) {
+          if (client.url.includes(jiraBaseUrl) && "focus" in client) {
+            return client.focus();
+          }
+        }
+        return self.clients.openWindow(issueUrl);
+      })
   );
 });
 

@@ -114,6 +114,8 @@ async function loadHistory() {
   notifications.sort((a, b) => b.id - a.id)
     .forEach(n => {
       const li = document.createElement("li");
+      
+      li.style.cursor = "pointer";
 
       li.innerHTML = `
         <strong>${n.title}</strong><br/>
@@ -121,6 +123,13 @@ async function loadHistory() {
         <small>${new Date(n.timestamp).toLocaleString()}</small>
         <hr/>
       `;
+      
+      li.addEventListener("click", () => {
+        if (!n.issueKey || !n.jiraBaseUrl) return;
+
+        const url = `${n.jiraBaseUrl}/browse/${n.issueKey}`;
+        window.open(url, "_blank");
+      });
 
       historyList.appendChild(li);
     });
