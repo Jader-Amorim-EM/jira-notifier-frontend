@@ -131,16 +131,3 @@ self.addEventListener("notificationclick", event => {
       })
   );
 });
-
-self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
-  clients.forEach(client => {
-    client.postMessage({
-      type: "NEW_NOTIFICATION",
-      payload: {
-        title,
-        body: options.body,
-        timestamp: Date.now()
-      }
-    });
-  });
-});
