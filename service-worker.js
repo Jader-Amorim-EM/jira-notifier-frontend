@@ -84,15 +84,20 @@ self.addEventListener("push", event => {
 
   event.waitUntil(
     (async () => {
+      
+      // 1️⃣ SALVA NO INDEXEDDB
+      await saveToIndexedDB(notification);
+
+      // 2️⃣ MOSTRA O PUSH
       await self.registration.showNotification(title, {
-        body,
+        body: notification.body,
         icon: "/icons/icon-192x192.png",
-        badge: "/icons/icon-72x72.png",
         data: {
            url
         }
       });
-
+      
+      // 3️⃣ ATUALIZA O FRONTEND EM TEMPO REAL
       const clients = await self.clients.matchAll({
         includeUncontrolled: true,
         type: "window"
