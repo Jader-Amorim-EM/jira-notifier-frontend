@@ -125,8 +125,11 @@ async function loadHistory() {
       `;
       
       li.addEventListener("click", () => {
-        if (!n.issueKey || !n.jiraBaseUrl) return;
-
+        if (!n.issueKey || !n.jiraBaseUrl) {
+          console.warn("⚠️ Item sem dados de redirecionamento", n);
+          return;
+        }
+      
         const url = `${n.jiraBaseUrl}/browse/${n.issueKey}`;
         window.open(url, "_blank");
       });
@@ -137,6 +140,8 @@ async function loadHistory() {
 
 navigator.serviceWorker.addEventListener("message", async event => {
   if (event.data?.type === "NEW_NOTIFICATION") {
+    console.log("📥 Salvando notificação:", event.data.payload);
+
     await saveNotification(event.data.payload);
     loadHistory();
   }
