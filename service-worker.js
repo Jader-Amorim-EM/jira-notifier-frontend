@@ -76,19 +76,23 @@ self.addEventListener("push", event => {
   const payload = {
     title: data.title || "Jira",
     body: data.body || "",
+    issueKey: data.issueKey || null,
+    jiraBaseUrl: data.jiraBaseUrl || null,
     timestamp: Date.now()
   };
 
   event.waitUntil(
     (async () => {
-      await self.registration.showNotification(title, {
-             body,
-             data: {
-               issueKey,
-               jiraBaseUrl
-             }
-});
+      // 🔔 Mostra a notificação do sistema
+      await self.registration.showNotification(payload.title, {
+        body: payload.body,
+        data: {
+          issueKey: payload.issueKey,
+          jiraBaseUrl: payload.jiraBaseUrl
+        }
+      });
 
+      // 📨 Envia para o frontend (tempo real)
       const clients = await self.clients.matchAll({
         includeUncontrolled: true,
         type: "window"
@@ -103,6 +107,7 @@ self.addEventListener("push", event => {
     })()
   );
 });
+
 
 
 
