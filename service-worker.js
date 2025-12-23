@@ -66,7 +66,7 @@ self.addEventListener("push", event => {
       // 2️⃣ MOSTRA O PUSH
       await self.registration.showNotification(notification.title, {
         body: notification.body,
-        icon: "/icons/icon-192x192.png",
+        icon: "./icons/icon-192x192.png",
         data: { url }
       });
 
