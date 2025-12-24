@@ -242,7 +242,6 @@ function setupButtons() {
 }
 
 
-
 async function updateButtons() {
   if (!("serviceWorker" in navigator)) return;
 
@@ -255,13 +254,33 @@ async function updateButtons() {
   if (!enableBtn || !disableBtn) return;
 
   if (subscription) {
-    // 🔔 já ativado
     enableBtn.disabled = true;
     disableBtn.disabled = false;
   } else {
-    // 🔕 desativado
     enableBtn.disabled = false;
     disableBtn.disabled = true;
+  }
+
+  // 🔔 Atualiza o status visual do push
+  await updatePushStatus();
+}
+
+
+async function updatePushStatus() {
+  if (!("serviceWorker" in navigator)) return;
+
+  const statusEl = document.getElementById("pushStatus");
+  if (!statusEl) return;
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+
+  if (subscription) {
+    statusEl.textContent = "🟢 Push ativo";
+    statusEl.style.color = "green";
+  } else {
+    statusEl.textContent = "🔴 Push desativado";
+    statusEl.style.color = "red";
   }
 }
 
