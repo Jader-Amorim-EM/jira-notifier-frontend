@@ -125,8 +125,8 @@ async function loadHistory() {
       `;
       
       li.addEventListener("click", () => {
-        if (!n.issueKey || !n.jiraBaseUrl) {
-          console.warn("⚠️ Item sem dados de redirecionamento", n);
+        if (!notification.issueKey) {
+          console.warn("Notificação sem issueKey");
           return;
         }
       
