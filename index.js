@@ -170,6 +170,37 @@ navigator.serviceWorker.addEventListener("message", async event => {
 });
 
 
+async function disableNotifications() {
+  if (!("serviceWorker" in navigator)) {
+    alert("Service Worker não suportado");
+    return;
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+
+  if (!subscription) {
+    alert("Notificações já estão desativadas");
+    return;
+  }
+
+  // 1️⃣ avisa o backend para remover a subscription
+  await fetch(`${BACKEND_URL}/push/unsubscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription)
+  });
+
+  // 2️⃣ remove do navegador
+  await subscription.unsubscribe();
+
+  console.log("🔕 Notificações desativadas");
+
+  alert("Notificações desativadas com sucesso");
+}
+
+
+
 /* ==============================
    LIMPAR HISTÓRICO
 ================================ */
@@ -182,9 +213,56 @@ clearButton.addEventListener("click", async () => {
   loadHistory();
 });
 
+function setupButtons() {
+  document
+    .getElementById("enableNotifications")
+    .addEventListener("click", async () => {
+      await subscribeUser();
+      await updateButtons();
+    });
+
+  document
+    .getElementById("disableNotifications")
+    .addEventListener("click", async () => {
+      await disableNotifications();
+      await updateButtons();
+    });
+}
+
+
+async function updateButtons() {
+  if (!("serviceWorker" in navigator)) return;
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+
+  const enableBtn = document.getElementById("enableNotifications");
+  const disableBtn = document.getElementById("disableNotifications");
+
+  if (!enableBtn || !disableBtn) return;
+
+  if (subscription) {
+    // 🔔 já ativado
+    enableBtn.disabled = true;
+    disableBtn.disabled = false;
+  } else {
+    // 🔕 desativado
+    enableBtn.disabled = false;
+    disableBtn.disabled = true;
+  }
+}
+
+
+document
+  .getElementById("disableNotifications")
+  .addEventListener("click", disableNotifications);
+
+
 // ===============================
 // 🚨 AQUI ENTRA O DOMContentLoaded
 // ===============================
 document.addEventListener("DOMContentLoaded", () => {
   loadHistory();
+  setupButtons();
+  updateButtons();
 });
