@@ -102,41 +102,49 @@ enableButton.addEventListener("click", () => {
    HISTÓRICO DE NOTIFICAÇÕES
 ================================ */
 async function loadHistory() {
+  const list = document.getElementById("history");
+  list.innerHTML = "";
+
   const notifications = await getNotifications();
 
-  historyList.innerHTML = "";
-
-  if (!notifications.length) {
-    historyList.innerHTML = "<li>Nenhuma notificação recebida ainda</li>";
+  if (!notifications || notifications.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "Nenhuma notificação recebida ainda";
+    list.appendChild(li);
     return;
   }
 
-  notifications.sort((a, b) => b.timestamp - a.timestamp)
-    .forEach(n => {
+  // 🔽 mais recentes primeiro
+  notifications
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .forEach(notification => {
       const li = document.createElement("li");
-      
-      li.style.cursor = "pointer";
 
       li.innerHTML = `
-        <strong>${n.title}</strong><br/>
-        ${n.body}<br/>
-        <small>${new Date(n.timestamp).toLocaleString()}</small>
-        <hr/>
+        <strong>${notification.title}</strong><br>
+        ${notification.body || ""}<br>
+        <small>${new Date(notification.timestamp).toLocaleString()}</small>
       `;
-      
+
+      li.style.cursor = "pointer";
+
       li.addEventListener("click", () => {
-        if (!notifications.issueKey) {
-          console.warn("Notificação sem issueKey");
+        if (!notification.issueKey) {
+          console.warn("Notificação sem issueKey", notification);
           return;
         }
-      
+
         const url = `${JIRA_BASE_URL}/${notification.issueKey}`;
         window.open(url, "_blank");
       });
 
-      historyList.appendChild(li);
+      list.appendChild(li);
+
+      const hr = document.createElement("hr");
+      list.appendChild(hr);
     });
 }
+
 
 navigator.serviceWorker.addEventListener("message", async event => {
   if (event.data?.type !== "NEW_NOTIFICATION") return;
