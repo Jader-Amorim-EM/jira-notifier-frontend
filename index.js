@@ -77,6 +77,14 @@ async function subscribeUser() {
 
   const registration = await navigator.serviceWorker.ready;
 
+  const existingSubscription =
+    await registration.pushManager.getSubscription();
+
+  if (existingSubscription) {
+    // já está ativo → não dispara popup duplicado
+    return false;
+  }
+
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
@@ -88,15 +96,8 @@ async function subscribeUser() {
     body: JSON.stringify(subscription)
   });
 
-  alert("Notificações ativadas com sucesso");
+  return true;
 }
-
-enableButton.addEventListener("click", () => {
-  subscribeUser().catch(err => {
-    console.error(err);
-    alert("Erro ao ativar notificações");
-  });
-});
 
 /* ==============================
    HISTÓRICO DE NOTIFICAÇÕES
@@ -171,32 +172,24 @@ navigator.serviceWorker.addEventListener("message", async event => {
 
 
 async function disableNotifications() {
-  if (!("serviceWorker" in navigator)) {
-    alert("Service Worker não suportado");
-    return;
-  }
+  if (!("serviceWorker" in navigator)) return false;
 
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
 
   if (!subscription) {
-    alert("Notificações já estão desativadas");
-    return;
+    return false;
   }
 
-  // 1️⃣ avisa o backend para remover a subscription
   await fetch(`${BACKEND_URL}/push/unsubscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(subscription)
   });
 
-  // 2️⃣ remove do navegador
   await subscription.unsubscribe();
 
-  console.log("🔕 Notificações desativadas");
-
-  alert("Notificações desativadas com sucesso");
+  return true;
 }
 
 
@@ -214,20 +207,40 @@ clearButton.addEventListener("click", async () => {
 });
 
 function setupButtons() {
-  document
-    .getElementById("enableNotifications")
-    .addEventListener("click", async () => {
-      await subscribeUser();
-      await updateButtons();
-    });
+  const enableBtn = document.getElementById("enableNotifications");
+  const disableBtn = document.getElementById("disableNotifications");
 
-  document
-    .getElementById("disableNotifications")
-    .addEventListener("click", async () => {
-      await disableNotifications();
+  enableBtn.addEventListener("click", async () => {
+    try {
+      const activated = await subscribeUser();
+
+      if (activated) {
+        alert("Notificações ativadas com sucesso");
+      }
+
       await updateButtons();
-    });
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao ativar notificações");
+    }
+  });
+
+  disableBtn.addEventListener("click", async () => {
+    try {
+      const disabled = await disableNotifications();
+
+      if (disabled) {
+        alert("Notificações desativadas com sucesso");
+      }
+
+      await updateButtons();
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao desativar notificações");
+    }
+  });
 }
+
 
 
 async function updateButtons() {
@@ -251,11 +264,6 @@ async function updateButtons() {
     disableBtn.disabled = true;
   }
 }
-
-
-document
-  .getElementById("disableNotifications")
-  .addEventListener("click", disableNotifications);
 
 
 // ===============================
