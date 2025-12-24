@@ -125,7 +125,7 @@ async function loadHistory() {
       `;
       
       li.addEventListener("click", () => {
-        if (!notification.issueKey) {
+        if (!notifications.issueKey) {
           console.warn("Notificação sem issueKey");
           return;
         }
