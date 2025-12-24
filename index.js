@@ -1,5 +1,5 @@
 import { getNotifications, saveNotification, clearNotifications } from "./db.js";
-
+const JIRA_BASE_URL = "https://escolarmanager.atlassian.net/browse";
 
 /* ==============================
    CONFIGURAÇÕES
@@ -130,7 +130,7 @@ async function loadHistory() {
           return;
         }
       
-        const url = `${n.jiraBaseUrl}/browse/${n.issueKey}`;
+        const url = `${JIRA_BASE_URL}/${notification.issueKey}`;
         window.open(url, "_blank");
       });
 
@@ -139,13 +139,28 @@ async function loadHistory() {
 }
 
 navigator.serviceWorker.addEventListener("message", async event => {
-  if (event.data?.type === "NEW_NOTIFICATION") {
-    console.log("📥 Salvando notificação:", event.data.payload);
+  if (event.data?.type !== "NEW_NOTIFICATION") return;
 
-    await saveNotification(event.data.payload);
-    loadHistory();
+  const { title, body, issueKey, timestamp } = event.data.payload;
+
+  if (!issueKey) {
+    console.warn("Notificação recebida sem issueKey, ignorando");
+    return;
   }
+
+  const notification = {
+    title,
+    body,
+    issueKey,
+    timestamp: timestamp || Date.now()
+  };
+
+  console.log("📥 Salvando notificação normalizada:", notification);
+
+  await saveNotification(notification);
+  loadHistory();
 });
+
 
 /* ==============================
    LIMPAR HISTÓRICO
