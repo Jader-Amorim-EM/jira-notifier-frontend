@@ -27,4 +27,14 @@
   background: #f4f5f7;
 }
 
+.change-list {
+  margin: 6px 0 6px 16px;
+  padding: 0;
+}
+
+.change-list li {
+  list-style: disc;
+  font-size: 13px;
+}
+
 

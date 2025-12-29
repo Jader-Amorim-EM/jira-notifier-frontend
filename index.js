@@ -115,43 +115,52 @@ async function loadHistory() {
     return;
   }
 
-  // 🔽 mais recentes primeiro
   notifications
     .sort((a, b) => b.timestamp - a.timestamp)
-    .forEach(notification => {
+    .forEach((n, index) => {
       const li = document.createElement("li");
       li.className = "history-item";
       li.style.cursor = "pointer";
-    
-      const date = new Date(notification.timestamp).toLocaleString();
+
+      const date = new Date(n.timestamp).toLocaleString();
+
+      let changesHtml = "";
+
+      if (Array.isArray(n.changes) && n.changes.length > 0) {
+        changesHtml = `
+          <ul class="change-list">
+            ${n.changes
+              .map(
+                c =>
+                  `<li><strong>${c.field}</strong>: ${c.from} → ${c.to}</li>`
+              )
+              .join("")}
+          </ul>
+        `;
+      } else {
+        changesHtml = `<em>Atualização sem detalhes</em>`;
+      }
 
       li.innerHTML = `
-        <strong>${notification.title}</strong><br>
-        ${notification.body || ""}<br>
+        <strong>${n.author || "Alguém"} alterou ${n.title}</strong><br>
+        ${n.body}<br>
+        ${changesHtml}
         <small>${date}</small>
       `;
 
-      li.style.cursor = "pointer";
-
       li.addEventListener("click", () => {
-        if (!notification.issueKey) {
-          console.warn("Notificação sem issueKey", notification);
-          return;
-        }
-
-        const url = `${JIRA_BASE_URL}/${notification.issueKey}`;
-        window.open(url, "_blank");
+        if (!n.issueKey) return;
+        window.open(`${JIRA_BASE_URL}/${n.issueKey}`, "_blank");
       });
 
       list.appendChild(li);
-      
-      // separador visual (evita hr no último item)
+
       if (index < notifications.length - 1) {
-        const hr = document.createElement("hr");
-        list.appendChild(hr);
+        list.appendChild(document.createElement("hr"));
       }
     });
 }
+
 
 
 navigator.serviceWorker.addEventListener("message", async event => {
