@@ -18,3 +18,13 @@
   z-index: 9999;
 }
 
+.history-item {
+  cursor: pointer;
+  padding: 8px 4px;
+}
+
+.history-item:hover {
+  background: #f4f5f7;
+}
+
+

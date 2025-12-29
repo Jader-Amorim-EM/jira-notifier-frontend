@@ -120,11 +120,15 @@ async function loadHistory() {
     .sort((a, b) => b.timestamp - a.timestamp)
     .forEach(notification => {
       const li = document.createElement("li");
+      li.className = "history-item";
+      li.style.cursor = "pointer";
+    
+      const date = new Date(notification.timestamp).toLocaleString();
 
       li.innerHTML = `
         <strong>${notification.title}</strong><br>
         ${notification.body || ""}<br>
-        <small>${new Date(notification.timestamp).toLocaleString()}</small>
+        <small>${date}</small>
       `;
 
       li.style.cursor = "pointer";
@@ -140,9 +144,12 @@ async function loadHistory() {
       });
 
       list.appendChild(li);
-
-      const hr = document.createElement("hr");
-      list.appendChild(hr);
+      
+      // separador visual (evita hr no último item)
+      if (index < notifications.length - 1) {
+        const hr = document.createElement("hr");
+        list.appendChild(hr);
+      }
     });
 }
 

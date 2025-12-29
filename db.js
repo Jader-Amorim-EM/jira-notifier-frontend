@@ -28,11 +28,8 @@ function openDB() {
 /* ==============================
    SALVAR NOTIFICAÇÃO
 ================================ */
-let sequenceCounter = 0;
-
 export async function saveNotification(notification) {
   const db = await openDB();
-
   const tx = db.transaction(STORE_NAME, "readwrite");
   const store = tx.objectStore(STORE_NAME);
 
@@ -41,8 +38,8 @@ export async function saveNotification(notification) {
     body: notification.body,
     issueKey: notification.issueKey,
     jiraBaseUrl: notification.jiraBaseUrl,
-    timestamp: notification.timestamp || Date.now(),
-    sequence: ++sequenceCounter
+    summary: notification.summary,
+    timestamp: notification.timestamp
   });
 
   return tx.complete;
@@ -70,11 +67,9 @@ export async function clearNotifications() {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-
     const request = store.clear();
 
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
 }
-
